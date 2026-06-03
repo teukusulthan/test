@@ -32,18 +32,18 @@ export function Filters({ filters, categories, onChange, onReset }: Props) {
           />
         </div>
 
-        <Select value={filters.category || "_"} onValueChange={(v) => set("category", v === "_" ? "" : v)}>
+        <Select value={filters.category || "all"} onValueChange={(v) => set("category", v === "all" ? "" : v)}>
           <SelectTrigger className="h-9 w-[140px]"><SelectValue placeholder="Category" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="_">All Categories</SelectItem>
+            <SelectItem value="all">All Categories</SelectItem>
             {categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
           </SelectContent>
         </Select>
 
-        <Select value={filters.gender || "_"} onValueChange={(v) => set("gender", v === "_" ? "" : v)}>
+        <Select value={filters.gender || "all"} onValueChange={(v) => set("gender", v === "all" ? "" : v)}>
           <SelectTrigger className="h-9 w-[110px]"><SelectValue placeholder="Gender" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="_">All</SelectItem>
+            <SelectItem value="all">All</SelectItem>
             <SelectItem value="Male">Male</SelectItem>
             <SelectItem value="Female">Female</SelectItem>
           </SelectContent>
