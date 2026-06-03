@@ -1,4 +1,4 @@
-const BASE_URL = "https://public.hijrahfood.id";
+const BASE = "https://public.hijrahfood.id";
 
 export interface Sale {
   transactionId: number;
@@ -19,12 +19,22 @@ export interface Pagination {
   totalPages: number;
 }
 
-export interface SalesFilters {
+export interface Summary {
+  totalTransactions: number;
+  totalRevenue: number;
+  averageOrderValue: number;
+  totalItemsSold: number;
+}
+
+export interface CategoryRevenue {
+  category: string;
+  revenue: number;
+}
+
+export interface Filters {
   search?: string;
   category?: string;
   gender?: string;
-  customerId?: string;
-  transactionId?: number;
   dateFrom?: string;
   dateTo?: string;
   ageMin?: number;
@@ -38,63 +48,43 @@ export interface SalesFilters {
   sortBy?: string;
   sortOrder?: "asc" | "desc";
   page?: number;
-  limit?: number;
-}
-
-export interface Summary {
-  totalTransactions: number;
-  totalRevenue: number;
-  averageOrderValue: number;
-  totalItemsSold: number;
-}
-
-export interface CategoryRevenue {
-  category: string;
-  revenue: number;
 }
 
 const headers = { "X-API-Key": process.env.API_KEY ?? "" };
 
-async function fetchWithRetry(url: string, options: RequestInit, retries = 3): Promise<Response> {
-  for (let i = 0; i < retries; i++) {
-    const res = await fetch(url, options);
-    if (res.status === 429 && i < retries - 1) {
-      await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
-      continue;
+async function api(path: string, params?: Record<string, unknown>) {
+  const url = new URL(path, BASE);
+  if (params) {
+    for (const [k, v] of Object.entries(params)) {
+      if (v != null && v !== "") url.searchParams.set(k, String(v));
     }
-    return res;
   }
-  return fetch(url, options);
-}
-
-export async function getCategoriesServer(): Promise<string[]> {
-  const res = await fetchWithRetry(`${BASE_URL}/categories`, { headers, next: { revalidate: 3600 } });
-  const data = await res.json();
-  return data.data ?? [];
-}
-
-export async function getSummaryServer(filters?: Record<string, string | undefined>): Promise<Summary> {
-  const url = new URL(`${BASE_URL}/summary`);
-  if (filters) {
-    Object.entries(filters).forEach(([k, v]) => { if (v) url.searchParams.set(k, v); });
-  }
-  const res = await fetchWithRetry(url.toString(), { headers, next: { revalidate: 60 } });
+  const res = await fetch(url.toString(), { headers, cache: "no-store" });
+  if (!res.ok) throw new Error(`${res.status}`);
   return res.json();
 }
 
-export async function getSalesServer(filters: SalesFilters = {}): Promise<{ data: Sale[]; pagination: Pagination }> {
-  const url = new URL(`${BASE_URL}/sales`);
-  Object.entries(filters).forEach(([k, v]) => { if (v !== undefined && v !== "") url.searchParams.set(k, String(v)); });
-  const res = await fetchWithRetry(url.toString(), { headers, cache: "no-store" });
-  return res.json();
+export async function getCategories(): Promise<string[]> {
+  const { data } = await api("/categories");
+  return data;
 }
 
-export function computeCategoryRevenue(sales: Sale[]): CategoryRevenue[] {
-  const grouped: Record<string, number> = {};
-  for (const sale of sales) {
-    grouped[sale.productCategory] = (grouped[sale.productCategory] || 0) + sale.totalAmount;
-  }
-  return Object.entries(grouped)
+export async function getSummary(f?: Record<string, unknown>): Promise<Summary> {
+  return api("/summary", f);
+}
+
+export async function getSales(f: Filters = {}): Promise<{ data: Sale[]; pagination: Pagination }> {
+  return api("/sales", { ...f, limit: 20 });
+}
+
+export function categoryRevenue(sales: Sale[]): CategoryRevenue[] {
+  const map: Record<string, number> = {};
+  for (const s of sales) map[s.productCategory] = (map[s.productCategory] || 0) + s.totalAmount;
+  return Object.entries(map)
     .map(([category, revenue]) => ({ category, revenue }))
     .sort((a, b) => b.revenue - a.revenue);
+}
+
+export function fmt(n: number) {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
 }

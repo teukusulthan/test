@@ -1,4 +1,4 @@
-import { getCategoriesServer, getSummaryServer, getSalesServer, computeCategoryRevenue, type SalesFilters } from "@/lib/api";
+import { getCategories, getSummary, getSales, categoryRevenue, type Filters } from "@/lib/api";
 import { Dashboard } from "@/components/dashboard";
 
 interface Props {
@@ -6,28 +6,25 @@ interface Props {
 }
 
 export default async function Page({ searchParams }: Props) {
-  const params = await searchParams;
+  const p = await searchParams;
 
-  const filters: SalesFilters = {
-    search: params.search,
-    category: params.category,
-    gender: params.gender,
-    customerId: params.customerId,
-    transactionId: params.transactionId ? Number(params.transactionId) : undefined,
-    dateFrom: params.dateFrom,
-    dateTo: params.dateTo,
-    ageMin: params.ageMin ? Number(params.ageMin) : undefined,
-    ageMax: params.ageMax ? Number(params.ageMax) : undefined,
-    quantityMin: params.quantityMin ? Number(params.quantityMin) : undefined,
-    quantityMax: params.quantityMax ? Number(params.quantityMax) : undefined,
-    pricePerUnitMin: params.pricePerUnitMin ? Number(params.pricePerUnitMin) : undefined,
-    pricePerUnitMax: params.pricePerUnitMax ? Number(params.pricePerUnitMax) : undefined,
-    totalAmountMin: params.totalAmountMin ? Number(params.totalAmountMin) : undefined,
-    totalAmountMax: params.totalAmountMax ? Number(params.totalAmountMax) : undefined,
-    sortBy: params.sortBy || "transactionId",
-    sortOrder: (params.sortOrder as "asc" | "desc") || "asc",
-    page: params.page ? Number(params.page) : 1,
-    limit: 20,
+  const filters: Filters = {
+    search: p.search,
+    category: p.category,
+    gender: p.gender,
+    dateFrom: p.dateFrom,
+    dateTo: p.dateTo,
+    ageMin: p.ageMin ? Number(p.ageMin) : undefined,
+    ageMax: p.ageMax ? Number(p.ageMax) : undefined,
+    quantityMin: p.quantityMin ? Number(p.quantityMin) : undefined,
+    quantityMax: p.quantityMax ? Number(p.quantityMax) : undefined,
+    pricePerUnitMin: p.pricePerUnitMin ? Number(p.pricePerUnitMin) : undefined,
+    pricePerUnitMax: p.pricePerUnitMax ? Number(p.pricePerUnitMax) : undefined,
+    totalAmountMin: p.totalAmountMin ? Number(p.totalAmountMin) : undefined,
+    totalAmountMax: p.totalAmountMax ? Number(p.totalAmountMax) : undefined,
+    sortBy: p.sortBy || "transactionId",
+    sortOrder: (p.sortOrder as "asc" | "desc") || "asc",
+    page: p.page ? Number(p.page) : 1,
   };
 
   const summaryFilters = {
@@ -40,19 +37,17 @@ export default async function Page({ searchParams }: Props) {
 
   try {
     const [categories, summary, sales] = await Promise.all([
-      getCategoriesServer(),
-      getSummaryServer(summaryFilters),
-      getSalesServer(filters),
+      getCategories(),
+      getSummary(summaryFilters),
+      getSales(filters),
     ]);
-
-    const categoryRevenue = computeCategoryRevenue(sales.data);
 
     return (
       <Dashboard
         categories={categories}
         summary={summary}
         sales={sales.data}
-        categoryRevenue={categoryRevenue}
+        revenue={categoryRevenue(sales.data)}
         pagination={sales.pagination}
         filters={filters}
       />
@@ -60,10 +55,7 @@ export default async function Page({ searchParams }: Props) {
   } catch {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">Something went wrong</h1>
-          <p className="text-muted-foreground">Please try again in a moment.</p>
-        </div>
+        <p className="text-muted-foreground">Something went wrong. Please try again.</p>
       </div>
     );
   }

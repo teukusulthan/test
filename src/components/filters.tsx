@@ -1,190 +1,109 @@
 "use client";
 
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { SlidersHorizontal, Search, X } from "lucide-react";
-import type { SalesFilters } from "@/lib/api";
+import { Search, SlidersHorizontal, X } from "lucide-react";
+import type { Filters as FiltersType } from "@/lib/api";
 
 interface Props {
-  filters: SalesFilters;
+  filters: FiltersType;
   categories: string[];
-  onChange: (filters: SalesFilters) => void;
-  onSearch: () => void;
+  onChange: (f: FiltersType) => void;
   onReset: () => void;
 }
 
-export function Filters({ filters, categories, onChange, onSearch, onReset }: Props) {
-  const set = (key: keyof SalesFilters, value: string | number | undefined | null) =>
-    onChange({ ...filters, [key]: value || undefined, page: 1 });
-
-  const hasFilters = Object.entries(filters).some(([key, value]) => {
-    if (["page", "limit"].includes(key)) return false;
-    if (key === "sortBy" && value === "transactionId") return false;
-    if (key === "sortOrder" && value === "asc") return false;
-    return value !== undefined && value !== "";
-  });
+export function Filters({ filters, categories, onChange, onReset }: Props) {
+  const [open, setOpen] = useState(false);
+  const set = (k: keyof FiltersType, v: unknown) => onChange({ ...filters, [k]: v || undefined });
 
   return (
-    <div className="space-y-4 rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h3 className="text-sm font-semibold">Find transactions</h3>
-          <p className="text-xs text-muted-foreground">Start with search, category, or gender. Advanced filters are optional.</p>
-        </div>
-        {hasFilters && (
-          <Button variant="ghost" size="sm" onClick={onReset}>
-            <X className="mr-1 h-3 w-3" /> Clear all
-          </Button>
-        )}
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+    <div className="rounded-xl border bg-card">
+      <div className="flex flex-wrap items-center gap-2 p-3">
+        <div className="relative flex-1 min-w-[180px]">
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search customer..."
-            className="h-10 pl-9"
+            className="h-9 pl-8"
             value={filters.search || ""}
             onChange={(e) => set("search", e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && onSearch()}
+            onKeyDown={(e) => e.key === "Enter" && onChange({ ...filters, page: 1 })}
           />
         </div>
 
-        <Select value={filters.category || "__all__"} onValueChange={(v) => set("category", v === "__all__" ? "" : v)}>
-          <SelectTrigger className="h-10 w-full"><SelectValue placeholder="All Categories" /></SelectTrigger>
+        <Select value={filters.category || "_"} onValueChange={(v) => set("category", v === "_" ? "" : v)}>
+          <SelectTrigger className="h-9 w-[140px]"><SelectValue placeholder="Category" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="__all__">All Categories</SelectItem>
+            <SelectItem value="_">All Categories</SelectItem>
             {categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
           </SelectContent>
         </Select>
 
-        <Select value={filters.gender || "__all__"} onValueChange={(v) => set("gender", v === "__all__" ? "" : v)}>
-          <SelectTrigger className="h-10 w-full"><SelectValue placeholder="All Genders" /></SelectTrigger>
+        <Select value={filters.gender || "_"} onValueChange={(v) => set("gender", v === "_" ? "" : v)}>
+          <SelectTrigger className="h-9 w-[110px]"><SelectValue placeholder="Gender" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="__all__">All Genders</SelectItem>
+            <SelectItem value="_">All</SelectItem>
             <SelectItem value="Male">Male</SelectItem>
             <SelectItem value="Female">Female</SelectItem>
           </SelectContent>
         </Select>
 
-        <Button onClick={onSearch} className="h-10 w-full">Apply Filters</Button>
+        <Button variant="outline" size="sm" className="h-9" onClick={() => setOpen(!open)}>
+          <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5" />
+          {open ? "Less" : "More"}
+        </Button>
+
+        <Button size="sm" className="h-9" onClick={() => onChange({ ...filters, page: 1 })}>
+          Search
+        </Button>
+
+        <Button variant="ghost" size="sm" className="h-9 text-muted-foreground" onClick={onReset}>
+          <X className="mr-1 h-3 w-3" />
+          Reset
+        </Button>
       </div>
 
-      <details className="group rounded-lg border border-border/70 bg-muted/20">
-        <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground">
-          <SlidersHorizontal className="h-4 w-4" />
-          Advanced filters
-          <span className="ml-auto text-xs group-open:hidden">Show</span>
-          <span className="ml-auto hidden text-xs group-open:inline">Hide</span>
-        </summary>
-
-        <div className="grid gap-3 border-t border-border/70 p-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Input
-            className="h-10"
-            type="number"
-            placeholder="Transaction ID"
-            value={filters.transactionId || ""}
-            onChange={(e) => set("transactionId", e.target.value ? Number(e.target.value) : undefined)}
-          />
-          <Input
-            className="h-10"
-            type="date"
-            placeholder="Date from"
-            value={filters.dateFrom || ""}
-            onChange={(e) => set("dateFrom", e.target.value)}
-          />
-          <Input
-            className="h-10"
-            type="date"
-            placeholder="Date to"
-            value={filters.dateTo || ""}
-            onChange={(e) => set("dateTo", e.target.value)}
-          />
+      {open && (
+        <div className="grid gap-2 border-t px-3 py-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Input type="date" className="h-9" value={filters.dateFrom || ""} onChange={(e) => set("dateFrom", e.target.value)} />
+          <Input type="date" className="h-9" value={filters.dateTo || ""} onChange={(e) => set("dateTo", e.target.value)} />
           <div className="flex gap-2">
-            <Input
-              className="h-10"
-              type="number"
-              placeholder="Age min"
-              value={filters.ageMin || ""}
-              onChange={(e) => set("ageMin", e.target.value ? Number(e.target.value) : undefined)}
-            />
-            <Input
-              className="h-10"
-              type="number"
-              placeholder="Age max"
-              value={filters.ageMax || ""}
-              onChange={(e) => set("ageMax", e.target.value ? Number(e.target.value) : undefined)}
-            />
+            <Input type="number" className="h-9" placeholder="Age min" value={filters.ageMin ?? ""} onChange={(e) => set("ageMin", e.target.value ? +e.target.value : undefined)} />
+            <Input type="number" className="h-9" placeholder="Age max" value={filters.ageMax ?? ""} onChange={(e) => set("ageMax", e.target.value ? +e.target.value : undefined)} />
           </div>
           <div className="flex gap-2">
-            <Input
-              className="h-10"
-              type="number"
-              placeholder="Qty min"
-              value={filters.quantityMin || ""}
-              onChange={(e) => set("quantityMin", e.target.value ? Number(e.target.value) : undefined)}
-            />
-            <Input
-              className="h-10"
-              type="number"
-              placeholder="Qty max"
-              value={filters.quantityMax || ""}
-              onChange={(e) => set("quantityMax", e.target.value ? Number(e.target.value) : undefined)}
-            />
+            <Input type="number" className="h-9" placeholder="Qty min" value={filters.quantityMin ?? ""} onChange={(e) => set("quantityMin", e.target.value ? +e.target.value : undefined)} />
+            <Input type="number" className="h-9" placeholder="Qty max" value={filters.quantityMax ?? ""} onChange={(e) => set("quantityMax", e.target.value ? +e.target.value : undefined)} />
           </div>
           <div className="flex gap-2">
-            <Input
-              className="h-10"
-              type="number"
-              placeholder="Price min"
-              value={filters.pricePerUnitMin || ""}
-              onChange={(e) => set("pricePerUnitMin", e.target.value ? Number(e.target.value) : undefined)}
-            />
-            <Input
-              className="h-10"
-              type="number"
-              placeholder="Price max"
-              value={filters.pricePerUnitMax || ""}
-              onChange={(e) => set("pricePerUnitMax", e.target.value ? Number(e.target.value) : undefined)}
-            />
+            <Input type="number" className="h-9" placeholder="Price min" value={filters.pricePerUnitMin ?? ""} onChange={(e) => set("pricePerUnitMin", e.target.value ? +e.target.value : undefined)} />
+            <Input type="number" className="h-9" placeholder="Price max" value={filters.pricePerUnitMax ?? ""} onChange={(e) => set("pricePerUnitMax", e.target.value ? +e.target.value : undefined)} />
           </div>
           <div className="flex gap-2">
-            <Input
-              className="h-10"
-              type="number"
-              placeholder="Total min"
-              value={filters.totalAmountMin || ""}
-              onChange={(e) => set("totalAmountMin", e.target.value ? Number(e.target.value) : undefined)}
-            />
-            <Input
-              className="h-10"
-              type="number"
-              placeholder="Total max"
-              value={filters.totalAmountMax || ""}
-              onChange={(e) => set("totalAmountMax", e.target.value ? Number(e.target.value) : undefined)}
-            />
+            <Input type="number" className="h-9" placeholder="Total min" value={filters.totalAmountMin ?? ""} onChange={(e) => set("totalAmountMin", e.target.value ? +e.target.value : undefined)} />
+            <Input type="number" className="h-9" placeholder="Total max" value={filters.totalAmountMax ?? ""} onChange={(e) => set("totalAmountMax", e.target.value ? +e.target.value : undefined)} />
           </div>
           <Select value={filters.sortBy || "transactionId"} onValueChange={(v) => set("sortBy", v)}>
-            <SelectTrigger className="h-10 w-full"><SelectValue placeholder="Sort by" /></SelectTrigger>
+            <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="transactionId">Transaction ID</SelectItem>
+              <SelectItem value="transactionId">ID</SelectItem>
               <SelectItem value="date">Date</SelectItem>
               <SelectItem value="age">Age</SelectItem>
               <SelectItem value="pricePerUnit">Price</SelectItem>
-              <SelectItem value="quantity">Quantity</SelectItem>
-              <SelectItem value="totalAmount">Total Amount</SelectItem>
+              <SelectItem value="quantity">Qty</SelectItem>
+              <SelectItem value="totalAmount">Total</SelectItem>
             </SelectContent>
           </Select>
           <Select value={filters.sortOrder || "asc"} onValueChange={(v) => set("sortOrder", v as "asc" | "desc")}>
-            <SelectTrigger className="h-10 w-full"><SelectValue placeholder="Order" /></SelectTrigger>
+            <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="asc">Ascending</SelectItem>
               <SelectItem value="desc">Descending</SelectItem>
             </SelectContent>
           </Select>
         </div>
-      </details>
+      )}
     </div>
   );
 }
