@@ -23,23 +23,23 @@ const fields = [
 export function Detail({ sale, onClose }: Props) {
   return (
     <Dialog open={!!sale} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="sm:max-w-sm rounded-2xl border-border bg-card">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base">
+          <DialogTitle className="flex items-center gap-2 text-base text-card-foreground">
             Sale #{sale?.transactionId}
             {sale && (
-              <Badge variant={sale.gender === "Male" ? "default" : "secondary"} className="font-normal">
+              <Badge variant={sale.gender === "Male" ? "default" : "secondary"} className="font-normal rounded-lg">
                 {sale.gender}
               </Badge>
             )}
           </DialogTitle>
         </DialogHeader>
         {sale && (
-          <dl className="mt-2 space-y-2.5">
+          <dl className="mt-2 space-y-3">
             {fields.map(({ label, key, format }) => (
               <div key={key} className="flex items-center justify-between">
                 <dt className="text-sm text-muted-foreground">{label}</dt>
-                <dd className="text-sm font-medium">{format ? format(sale[key] as number) : String(sale[key])}</dd>
+                <dd className="text-sm font-medium text-card-foreground">{format ? format(sale[key] as number) : String(sale[key])}</dd>
               </div>
             ))}
           </dl>

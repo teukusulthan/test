@@ -35,16 +35,19 @@ export function Dashboard({ categories, summary, sales, revenue, pagination, fil
   );
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8 md:px-8">
-      <header className="mb-8">
-        <p className="text-xs font-medium uppercase tracking-widest text-primary">Hijrahfood</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight md:text-3xl">Sales Dashboard</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Retail performance overview from the public API.</p>
+    <main className="mx-auto max-w-6xl px-4 py-10 md:px-8">
+      <header className="mb-10 text-center">
+        <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5">
+          <span className="h-2 w-2 rounded-full bg-primary" />
+          <span className="text-xs font-semibold uppercase tracking-widest text-primary">Hijrahfood</span>
+        </div>
+        <h1 className="mt-4 text-3xl font-bold tracking-tight text-foreground md:text-4xl">Sales Dashboard</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Retail performance overview from the public API</p>
       </header>
 
       <Stats summary={summary} />
 
-      <section className="mt-6">
+      <section className="mt-8">
         <Filters
           filters={filters}
           categories={categories}
@@ -53,25 +56,25 @@ export function Dashboard({ categories, summary, sales, revenue, pagination, fil
         />
       </section>
 
-      <section className="mt-6">
+      <section className="mt-8">
         <Chart data={revenue} />
       </section>
 
-      <section className="mt-6">
+      <section className="mt-8">
         <Table
           sales={sales}
           pagination={pagination}
           page={filters.page || 1}
-          onPageChange={(page) => {
-            const p = new URLSearchParams(sp.toString());
-            p.set("page", String(page));
-            router.push(`?${p.toString()}`);
-          }}
+          onPageChange={(p) => push({ ...filters, page: p })}
           onSelect={setSelected}
         />
       </section>
 
       <Detail sale={selected} onClose={() => setSelected(null)} />
+
+      <footer className="mt-12 text-center text-xs text-muted-foreground/60">
+        Built for Hijrahfood Technical Assessment
+      </footer>
     </main>
   );
 }

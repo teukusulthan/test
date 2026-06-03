@@ -16,13 +16,13 @@ export function Stats({ summary }: { summary: Summary }) {
       {items.map(({ key, label, icon: Icon, format }) => (
         <div
           key={key}
-          className="group relative overflow-hidden rounded-xl border bg-card p-4 transition-shadow hover:shadow-md"
+          className="group relative overflow-hidden rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary/30"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">{label}</span>
-            <Icon className="h-4 w-4 text-muted-foreground/50 transition-colors group-hover:text-primary" />
+            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</span>
+            <Icon className="h-4 w-4 text-muted-foreground/60 transition-colors group-hover:text-primary" />
           </div>
-          <p className="mt-2 text-xl font-semibold tracking-tight">{format(summary[key])}</p>
+          <p className="mt-3 text-2xl font-semibold tracking-tight text-card-foreground">{format(summary[key])}</p>
         </div>
       ))}
     </div>

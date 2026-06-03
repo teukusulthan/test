@@ -7,18 +7,18 @@ export function Chart({ data }: { data: CategoryRevenue[] }) {
   const max = Math.max(...data.map((d) => d.revenue));
 
   return (
-    <div className="rounded-xl border bg-card p-4">
-      <h2 className="mb-4 text-sm font-medium text-muted-foreground">Revenue by Category</h2>
-      <div className="space-y-3">
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <h2 className="mb-5 text-sm font-medium uppercase tracking-wider text-muted-foreground">Revenue by Category</h2>
+      <div className="space-y-4">
         {data.map((d) => (
-          <div key={d.category} className="flex items-center gap-3">
+          <div key={d.category} className="flex items-center gap-4">
             <span className="w-24 shrink-0 text-sm text-muted-foreground">{d.category}</span>
-            <div className="relative h-7 flex-1 overflow-hidden rounded bg-muted">
+            <div className="relative h-8 flex-1 overflow-hidden rounded-xl bg-muted">
               <div
-                className="absolute inset-y-0 left-0 rounded bg-primary transition-all duration-500"
+                className="absolute inset-y-0 left-0 rounded-xl bg-primary"
                 style={{ width: `${(d.revenue / max) * 100}%` }}
               />
-              <span className="relative z-10 flex h-full items-center px-2 text-xs font-medium text-primary-foreground">
+              <span className="relative z-10 flex h-full items-center px-3 text-xs font-semibold text-primary-foreground">
                 {fmt(d.revenue)}
               </span>
             </div>
