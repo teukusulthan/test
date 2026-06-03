@@ -20,7 +20,13 @@ function formatCurrency(n: number) {
 
 export function SalesTable({ sales, pagination, page, onPageChange, onSelect }: Props) {
   return (
-    <div className="rounded-lg border bg-card">
+    <div className="overflow-hidden rounded-xl border border-border/70 bg-card/70 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/70 px-4 py-3">
+        <div>
+          <h2 className="text-sm font-semibold">Transactions</h2>
+          <p className="text-xs text-muted-foreground">Click a row to inspect the sale details.</p>
+        </div>
+      </div>
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
@@ -47,7 +53,7 @@ export function SalesTable({ sales, pagination, page, onPageChange, onSelect }: 
               sales.map((sale) => (
                 <TableRow
                   key={sale.transactionId}
-                  className="cursor-pointer"
+                  className="cursor-pointer hover:bg-muted/40"
                   onClick={() => onSelect(sale)}
                 >
                   <TableCell className="font-medium">{sale.transactionId}</TableCell>
@@ -71,7 +77,7 @@ export function SalesTable({ sales, pagination, page, onPageChange, onSelect }: 
       </div>
 
       {pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between border-t px-4 py-3">
+        <div className="flex flex-col gap-3 border-t border-border/70 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
             Showing {(pagination.page - 1) * pagination.limit + 1}–{Math.min(pagination.page * pagination.limit, pagination.totalItems)} of {pagination.totalItems}
           </p>

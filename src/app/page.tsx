@@ -1,4 +1,4 @@
-import { getCategoriesServer, getSummaryServer, getSalesServer, type SalesFilters } from "@/lib/api";
+import { getCategoriesServer, getSummaryServer, getSalesServer, computeCategoryRevenue, type SalesFilters } from "@/lib/api";
 import { Dashboard } from "@/components/dashboard";
 
 interface Props {
@@ -38,19 +38,33 @@ export default async function Page({ searchParams }: Props) {
     dateTo: filters.dateTo,
   };
 
-  const [categories, summary, sales] = await Promise.all([
-    getCategoriesServer(),
-    getSummaryServer(summaryFilters),
-    getSalesServer(filters),
-  ]);
+  try {
+    const [categories, summary, sales] = await Promise.all([
+      getCategoriesServer(),
+      getSummaryServer(summaryFilters),
+      getSalesServer(filters),
+    ]);
 
-  return (
-    <Dashboard
-      categories={categories}
-      summary={summary}
-      sales={sales.data}
-      pagination={sales.pagination}
-      filters={filters}
-    />
-  );
+    const categoryRevenue = computeCategoryRevenue(sales.data);
+
+    return (
+      <Dashboard
+        categories={categories}
+        summary={summary}
+        sales={sales.data}
+        categoryRevenue={categoryRevenue}
+        pagination={sales.pagination}
+        filters={filters}
+      />
+    );
+  } catch {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Something went wrong</h1>
+          <p className="text-muted-foreground">Please try again in a moment.</p>
+        </div>
+      </div>
+    );
+  }
 }

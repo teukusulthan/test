@@ -48,12 +48,29 @@ export interface Summary {
   totalItemsSold: number;
 }
 
+export interface CategoryRevenue {
+  category: string;
+  revenue: number;
+}
+
 const headers = { "X-API-Key": process.env.API_KEY ?? "" };
 
+async function fetchWithRetry(url: string, options: RequestInit, retries = 3): Promise<Response> {
+  for (let i = 0; i < retries; i++) {
+    const res = await fetch(url, options);
+    if (res.status === 429 && i < retries - 1) {
+      await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
+      continue;
+    }
+    return res;
+  }
+  return fetch(url, options);
+}
+
 export async function getCategoriesServer(): Promise<string[]> {
-  const res = await fetch(`${BASE_URL}/categories`, { headers, next: { revalidate: 3600 } });
+  const res = await fetchWithRetry(`${BASE_URL}/categories`, { headers, next: { revalidate: 3600 } });
   const data = await res.json();
-  return data.data;
+  return data.data ?? [];
 }
 
 export async function getSummaryServer(filters?: Record<string, string | undefined>): Promise<Summary> {
@@ -61,13 +78,23 @@ export async function getSummaryServer(filters?: Record<string, string | undefin
   if (filters) {
     Object.entries(filters).forEach(([k, v]) => { if (v) url.searchParams.set(k, v); });
   }
-  const res = await fetch(url.toString(), { headers, next: { revalidate: 60 } });
+  const res = await fetchWithRetry(url.toString(), { headers, next: { revalidate: 60 } });
   return res.json();
 }
 
 export async function getSalesServer(filters: SalesFilters = {}): Promise<{ data: Sale[]; pagination: Pagination }> {
   const url = new URL(`${BASE_URL}/sales`);
   Object.entries(filters).forEach(([k, v]) => { if (v !== undefined && v !== "") url.searchParams.set(k, String(v)); });
-  const res = await fetch(url.toString(), { headers, cache: "no-store" });
+  const res = await fetchWithRetry(url.toString(), { headers, cache: "no-store" });
   return res.json();
+}
+
+export function computeCategoryRevenue(sales: Sale[]): CategoryRevenue[] {
+  const grouped: Record<string, number> = {};
+  for (const sale of sales) {
+    grouped[sale.productCategory] = (grouped[sale.productCategory] || 0) + sale.totalAmount;
+  }
+  return Object.entries(grouped)
+    .map(([category, revenue]) => ({ category, revenue }))
+    .sort((a, b) => b.revenue - a.revenue);
 }
