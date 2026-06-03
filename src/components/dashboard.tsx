@@ -1,62 +1,56 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback } from "react";
 import { SummaryCards } from "@/components/summary-cards";
 import { Filters } from "@/components/filters";
 import { SalesTable } from "@/components/sales-table";
 import { RevenueChart } from "@/components/revenue-chart";
 import { SaleDetail } from "@/components/sale-detail";
-import { getSummary, getSales, type Sale, type Summary, type SalesFilters, type Pagination } from "@/lib/api";
-
-const defaultFilters: SalesFilters = { sortBy: "transactionId", sortOrder: "asc", page: 1, limit: 20 };
+import { useState } from "react";
+import type { Sale, Summary, Pagination, SalesFilters } from "@/lib/api";
 
 interface Props {
   categories: string[];
+  summary: Summary;
+  sales: Sale[];
+  pagination: Pagination;
+  filters: SalesFilters;
 }
 
-export function Dashboard({ categories }: Props) {
-  const [filters, setFilters] = useState<SalesFilters>(defaultFilters);
-  const [summary, setSummary] = useState<Summary | null>(null);
-  const [sales, setSales] = useState<Sale[]>([]);
-  const [pagination, setPagination] = useState<Pagination | null>(null);
-  const [loading, setLoading] = useState(true);
+export function Dashboard({ categories, summary, sales, pagination, filters }: Props) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const summaryFilters = {
-        search: filters.search,
-        category: filters.category,
-        gender: filters.gender,
-        dateFrom: filters.dateFrom,
-        dateTo: filters.dateTo,
-      };
-      const [summaryData, salesData] = await Promise.all([
-        getSummary(summaryFilters),
-        getSales(filters),
-      ]);
-      setSummary(summaryData);
-      setSales(salesData.data);
-      setPagination(salesData.pagination);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
+  const updateParams = useCallback(
+    (newFilters: SalesFilters) => {
+      const params = new URLSearchParams();
+      Object.entries(newFilters).forEach(([key, value]) => {
+        if (value !== undefined && value !== "" && key !== "limit") {
+          params.set(key, String(value));
+        }
+      });
+      router.push(`?${params.toString()}`);
+    },
+    [router]
+  );
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters]);
+  const handleFiltersChange = (newFilters: SalesFilters) => {
+    updateParams({ ...newFilters, page: 1 });
+  };
 
-  const handleSearch = () => fetchData();
+  const handleSearch = () => updateParams(filters);
 
-  const handleReset = () => setFilters(defaultFilters);
+  const handleReset = () => {
+    router.push("/");
+  };
 
-  const handlePageChange = (page: number) => setFilters((prev) => ({ ...prev, page }));
+  const handlePageChange = (page: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", String(page));
+    router.push(`?${params.toString()}`);
+  };
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
@@ -65,12 +59,12 @@ export function Dashboard({ categories }: Props) {
         <p className="text-sm text-muted-foreground">Hijrahfood Public API</p>
       </div>
 
-      <SummaryCards summary={summary} loading={loading} />
+      <SummaryCards summary={summary} />
 
       <Filters
         filters={filters}
         categories={categories}
-        onChange={setFilters}
+        onChange={handleFiltersChange}
         onSearch={handleSearch}
         onReset={handleReset}
       />
@@ -80,7 +74,6 @@ export function Dashboard({ categories }: Props) {
       <SalesTable
         sales={sales}
         pagination={pagination}
-        loading={loading}
         page={filters.page || 1}
         onPageChange={handlePageChange}
         onSelect={setSelectedSale}

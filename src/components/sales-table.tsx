@@ -8,8 +8,7 @@ import type { Sale, Pagination } from "@/lib/api";
 
 interface Props {
   sales: Sale[];
-  pagination: Pagination | null;
-  loading: boolean;
+  pagination: Pagination;
   page: number;
   onPageChange: (page: number) => void;
   onSelect: (sale: Sale) => void;
@@ -19,7 +18,7 @@ function formatCurrency(n: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
 }
 
-export function SalesTable({ sales, pagination, loading, page, onPageChange, onSelect }: Props) {
+export function SalesTable({ sales, pagination, page, onPageChange, onSelect }: Props) {
   return (
     <div className="rounded-lg border bg-card">
       <div className="overflow-x-auto">
@@ -38,15 +37,7 @@ export function SalesTable({ sales, pagination, loading, page, onPageChange, onS
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  {Array.from({ length: 9 }).map((_, j) => (
-                    <TableCell key={j}><div className="h-4 animate-pulse rounded bg-muted" /></TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : sales.length === 0 ? (
+            {sales.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
                   No results found
@@ -79,7 +70,7 @@ export function SalesTable({ sales, pagination, loading, page, onPageChange, onS
         </Table>
       </div>
 
-      {pagination && pagination.totalPages > 1 && (
+      {pagination.totalPages > 1 && (
         <div className="flex items-center justify-between border-t px-4 py-3">
           <p className="text-sm text-muted-foreground">
             Showing {(pagination.page - 1) * pagination.limit + 1}–{Math.min(pagination.page * pagination.limit, pagination.totalItems)} of {pagination.totalItems}

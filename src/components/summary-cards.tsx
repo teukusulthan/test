@@ -4,11 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, ShoppingCart, TrendingUp, Package } from "lucide-react";
 import type { Summary } from "@/lib/api";
 
-interface Props {
-  summary: Summary | null;
-  loading?: boolean;
-}
-
 function formatCurrency(n: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
 }
@@ -20,7 +15,7 @@ const cards = [
   { key: "totalItemsSold" as const, label: "Items Sold", icon: Package, format: (n: number) => n.toLocaleString(), color: "text-orange-600" },
 ];
 
-export function SummaryCards({ summary, loading }: Props) {
+export function SummaryCards({ summary }: { summary: Summary }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {cards.map(({ key, label, icon: Icon, format, color }) => (
@@ -30,11 +25,7 @@ export function SummaryCards({ summary, loading }: Props) {
             <Icon className={`h-4 w-4 ${color}`} />
           </CardHeader>
           <CardContent>
-            {loading || !summary ? (
-              <div className="h-8 w-24 animate-pulse rounded bg-muted" />
-            ) : (
-              <div className="text-2xl font-bold">{format(summary[key])}</div>
-            )}
+            <div className="text-2xl font-bold">{format(summary[key])}</div>
           </CardContent>
         </Card>
       ))}

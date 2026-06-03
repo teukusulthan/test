@@ -1,3 +1,5 @@
+const BASE_URL = "https://public.hijrahfood.id";
+
 export interface Sale {
   transactionId: number;
   date: string;
@@ -46,36 +48,26 @@ export interface Summary {
   totalItemsSold: number;
 }
 
-async function apiFetch<T>(path: string, params?: Record<string, string | number | undefined>): Promise<T> {
-  const url = new URL(path, window.location.origin);
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== "") url.searchParams.set(key, String(value));
-    });
+const headers = { "X-API-Key": process.env.API_KEY ?? "" };
+
+export async function getCategoriesServer(): Promise<string[]> {
+  const res = await fetch(`${BASE_URL}/categories`, { headers, next: { revalidate: 3600 } });
+  const data = await res.json();
+  return data.data;
+}
+
+export async function getSummaryServer(filters?: Record<string, string | undefined>): Promise<Summary> {
+  const url = new URL(`${BASE_URL}/summary`);
+  if (filters) {
+    Object.entries(filters).forEach(([k, v]) => { if (v) url.searchParams.set(k, v); });
   }
-  const res = await fetch(url.toString());
-  if (!res.ok) throw new Error(`API ${res.status}`);
+  const res = await fetch(url.toString(), { headers, next: { revalidate: 60 } });
   return res.json();
 }
 
-export async function getCategories(): Promise<string[]> {
-  const data = await apiFetch<{ data: string[] }>("/api/categories");
-  return data.data;
-}
-
-export async function getSummary(filters?: Pick<SalesFilters, "search" | "category" | "gender" | "dateFrom" | "dateTo">): Promise<Summary> {
-  return apiFetch("/api/summary", filters as Record<string, string>);
-}
-
-export async function getSales(filters: SalesFilters = {}): Promise<{ data: Sale[]; pagination: Pagination }> {
-  return apiFetch("/api/sales", filters as Record<string, string | number>);
-}
-
-export async function getCategoriesServer(): Promise<string[]> {
-  const res = await fetch("https://public.hijrahfood.id/categories", {
-    headers: { "X-API-Key": process.env.API_KEY ?? "" },
-    next: { revalidate: 3600 },
-  });
-  const data = await res.json();
-  return data.data;
+export async function getSalesServer(filters: SalesFilters = {}): Promise<{ data: Sale[]; pagination: Pagination }> {
+  const url = new URL(`${BASE_URL}/sales`);
+  Object.entries(filters).forEach(([k, v]) => { if (v !== undefined && v !== "") url.searchParams.set(k, String(v)); });
+  const res = await fetch(url.toString(), { headers, cache: "no-store" });
+  return res.json();
 }
