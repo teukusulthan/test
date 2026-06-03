@@ -1,9 +1,3 @@
-const BASE_URL = "https://public.hijrahfood.id";
-
-const headers = {
-  "X-API-Key": "hijrahfood-jse-01-2026-36cc72bbcfa4",
-};
-
 export interface Sale {
   transactionId: number;
   date: string;
@@ -52,58 +46,36 @@ export interface Summary {
   totalItemsSold: number;
 }
 
-export interface Metadata {
-  totalRecords: number;
-  availableSortFields: string[];
-  availableGenders: string[];
-  availableCategories: string[];
-  dateRange: { start: string; end: string };
-  ageRange: { min: number; max: number };
-  quantityRange: { min: number; max: number };
-  pricePerUnitRange: { min: number; max: number };
-  totalAmountRange: { min: number; max: number };
-}
-
-export interface Health {
-  status: string;
-  version: string;
-  datasetLoaded: boolean;
-  totalRecords: number;
-}
-
 async function apiFetch<T>(path: string, params?: Record<string, string | number | undefined>): Promise<T> {
-  const url = new URL(`${BASE_URL}${path}`);
+  const url = new URL(path, window.location.origin);
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== "") url.searchParams.set(key, String(value));
     });
   }
-  const res = await fetch(url.toString(), { headers, next: { revalidate: 60 } });
-  if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
+  const res = await fetch(url.toString());
+  if (!res.ok) throw new Error(`API ${res.status}`);
   return res.json();
 }
 
-export async function getHealth(): Promise<Health> {
-  return apiFetch("/health");
-}
-
-export async function getMetadata(): Promise<Metadata> {
-  return apiFetch("/metadata");
-}
-
 export async function getCategories(): Promise<string[]> {
-  const data = await apiFetch<{ data: string[] }>("/categories");
+  const data = await apiFetch<{ data: string[] }>("/api/categories");
   return data.data;
 }
 
 export async function getSummary(filters?: Pick<SalesFilters, "search" | "category" | "gender" | "dateFrom" | "dateTo">): Promise<Summary> {
-  return apiFetch("/summary", filters as Record<string, string>);
+  return apiFetch("/api/summary", filters as Record<string, string>);
 }
 
 export async function getSales(filters: SalesFilters = {}): Promise<{ data: Sale[]; pagination: Pagination }> {
-  return apiFetch("/sales", filters as Record<string, string | number>);
+  return apiFetch("/api/sales", filters as Record<string, string | number>);
 }
 
-export async function getSale(transactionId: number): Promise<Sale> {
-  return apiFetch(`/sales/${transactionId}`);
+export async function getCategoriesServer(): Promise<string[]> {
+  const res = await fetch("https://public.hijrahfood.id/categories", {
+    headers: { "X-API-Key": process.env.API_KEY ?? "" },
+    next: { revalidate: 3600 },
+  });
+  const data = await res.json();
+  return data.data;
 }
